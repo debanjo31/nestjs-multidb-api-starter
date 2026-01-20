@@ -1,0 +1,221 @@
+# =============================================================================
+# NestJS Multi-DB API Starter - Docker Compose for Local Development
+# =============================================================================
+# Usage:
+#   Start all services:     docker-compose up -d
+#   Start specific service: docker-compose up -d service
+#   View logs:              docker-compose logs -f
+#   Stop all:               docker-compose down
+#   Reset with volumes:     docker-compose down -v
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure Services
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: starter-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: starter_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7
+    container_name: starter-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: starter-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: starter-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Application Services (uncomment to run in containers)
+  # ---------------------------------------------------------------------------
+
+  # Main User/Business Logic Service
+  service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: service
+        PORT: 7000
+    container_name: starter-service
+    ports:
+      - "7000:7000"
+    environment:
+      - NODE_ENV=development
+      - PORT=7000
+      - POSTGRES_DB_HOST=postgres
+      - POSTGRES_DB_PORT=5432
+      - POSTGRES_DB_NAME=starter_db
+      - POSTGRES_DB_USERNAME=postgres
+      - POSTGRES_DB_PASSWORD=postgres
+      - POSTGRES_DB_SSL=false
+      - DB_URL=mongodb://mongo:mongo@mongodb:27017/starter_db?authSource=admin
+      - REDIS_SERVER_HOST_URL=redis://redis:6379
+      - RABBIT_MQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    profiles:
+      - app
+
+  # Admin Portal Service
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: admin
+        PORT: 7001
+    container_name: starter-admin
+    ports:
+      - "7001:7001"
+    environment:
+      - NODE_ENV=development
+      - PORT=7001
+      - POSTGRES_DB_HOST=postgres
+      - POSTGRES_DB_PORT=5432
+      - POSTGRES_DB_NAME=starter_db
+      - POSTGRES_DB_USERNAME=postgres
+      - POSTGRES_DB_PASSWORD=postgres
+      - POSTGRES_DB_SSL=false
+      - DB_URL=mongodb://mongo:mongo@mongodb:27017/starter_db?authSource=admin
+      - REDIS_SERVER_HOST_URL=redis://redis:6379
+      - RABBIT_MQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    profiles:
+      - app
+
+  # API Gateway
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: gateway
+        PORT: 7004
+    container_name: starter-gateway
+    ports:
+      - "7004:7004"
+    environment:
+      - NODE_ENV=development
+      - PORT=7004
+      - USER_MICROSERVICE_URL=http://service:7000/api/v1
+      - ADMIN_MICROSERVICE_URL=http://admin:7001/api/v1
+      - WORKER_MICROSERVICE_URL=http://worker:7010/api/v1
+      - POSTGRES_DB_HOST=postgres
+      - POSTGRES_DB_PORT=5432
+      - POSTGRES_DB_NAME=starter_db
+      - POSTGRES_DB_USERNAME=postgres
+      - POSTGRES_DB_PASSWORD=postgres
+      - POSTGRES_DB_SSL=false
+      - DB_URL=mongodb://mongo:mongo@mongodb:27017/starter_db?authSource=admin
+    depends_on:
+      - service
+    profiles:
+      - app
+
+  # Async Worker Service
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: worker
+        PORT: 7010
+    container_name: starter-worker
+    ports:
+      - "7010:7010"
+    environment:
+      - NODE_ENV=development
+      - PORT=7010
+      - POSTGRES_DB_HOST=postgres
+      - POSTGRES_DB_PORT=5432
+      - POSTGRES_DB_NAME=starter_db
+      - POSTGRES_DB_USERNAME=postgres
+      - POSTGRES_DB_PASSWORD=postgres
+      - POSTGRES_DB_SSL=false
+      - DB_URL=mongodb://mongo:mongo@mongodb:27017/starter_db?authSource=admin
+      - REDIS_SERVER_HOST_URL=redis://redis:6379
+      - RABBIT_MQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    profiles:
+      - app
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  default:
+    name: starter-network

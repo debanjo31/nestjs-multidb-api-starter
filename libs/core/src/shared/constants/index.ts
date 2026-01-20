@@ -1,0 +1,26 @@
+import { HttpStatus } from '@nestjs/common';
+
+
+export const REDIS_MODULE_OPTIONS = Symbol('REDIS_MODULE_OPTIONS');
+export const REDIS_CLIENT = Symbol('REDIS_CLIENT');
+
+export const WorkerService = {
+  WORKER_SERVICE_TOKEN: 'WORKER_SERVICE_TOKEN',
+};
+
+export const CLOSED = 'closed';
+export const OPEN = 'open';
+export const INITIATE = 'initiate';
+export const DECLINED = 'declined';
+export const COMPLETED = 'completed';
+
+export const OK = HttpStatus.OK;
+export const CONFLICT = HttpStatus.CONFLICT;
+export const INTERNAL_SERVER_ERROR = HttpStatus.INTERNAL_SERVER_ERROR;
+export const CREATED = HttpStatus.CREATED;
+export const BAD_REQUEST = HttpStatus.BAD_REQUEST;
+export const FORBIDDEN = HttpStatus.FORBIDDEN;
+export const NOT_FOUND = HttpStatus.NOT_FOUND;
+export const NO_CONTENT = HttpStatus.NO_CONTENT;
+export const METHOD_NOT_ALLOWED = HttpStatus.METHOD_NOT_ALLOWED;
+export const UNAUTHORIZED = HttpStatus.UNAUTHORIZED;
