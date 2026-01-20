@@ -2,6 +2,55 @@
 
 A production-ready NestJS 11 monorepo starter for building microservices with multiple databases. Ships with an API gateway, background workers, and shared libraries—so you can focus on features instead of boilerplate.
 
+[![npm version](https://img.shields.io/npm/v/@debanjo/create-nestjs-multidb.svg)](https://www.npmjs.com/package/@debanjo/create-nestjs-multidb)
+
+## Installation
+
+Scaffold a production-ready NestJS multi-database API project with a single command.
+
+```bash
+npx @debanjo/create-nestjs-multidb my-project
+```
+
+Or install globally:
+
+```bash
+npm install -g @debanjo/create-nestjs-multidb
+create-nestjs-multidb my-project
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--pm <manager>` | Package manager: npm, yarn, or pnpm |
+| `--no-install` | Skip automatic dependency installation |
+| `--no-git` | Skip git initialization |
+
+### Examples
+
+```bash
+# Interactive mode - prompts for all options
+npx @debanjo/create-nestjs-multidb
+
+# Specify project name
+npx @debanjo/create-nestjs-multidb my-api
+
+# Use pnpm and skip git init
+npx @debanjo/create-nestjs-multidb my-api --pm pnpm --no-git
+```
+
+### Quick Start
+
+After creating your project:
+
+```bash
+cd my-project
+cp _env/.env.example _env/.env
+docker-compose up -d
+npm run dev
+```
+
 ## Features
 
 - **Monorepo Architecture** — Four runnable apps: `service`, `admin`, `gateway`, and `worker`
@@ -55,7 +104,9 @@ A production-ready NestJS 11 monorepo starter for building microservices with mu
 - RabbitMQ (for worker queues)
 - Redis (optional)
 
-## Getting Started
+## Getting Started (Manual Setup)
+
+If you prefer to clone the repository directly:
 
 ### 1. Clone and install
 
